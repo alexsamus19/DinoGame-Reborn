@@ -2,8 +2,11 @@ using UnityEngine;
 
 public class PlayerSpawner : MonoBehaviour
 {
-    [SerializeField] private GameObject playerPrefab;
+    [Header("Settings")]
     [SerializeField] private float offsetFromLeftEdge = 200f;
+    
+    [Header("Elevents")]
+    [SerializeField] private GameObject playerPrefab;
 
     private void Start()
     {

@@ -1,24 +1,33 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using UnityEngine.Events;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
+    [Header("Game Settings")]
     public float initialGameSpeed = 5f;
     public float gameSpeedIncrease = 0.1f;
     public float gameSpeed { get; private set; }
 
-    public TextMeshProUGUI gameOverText;
-    public TextMeshProUGUI scoreText;
-    public TextMeshProUGUI hiscoreText;
-    public Button retryButton;
+    [Header("Elements")]
+    [SerializeField] private TextMeshProUGUI gameOverText;
+    [SerializeField] private TextMeshProUGUI scoreText;
+    [SerializeField] private TextMeshProUGUI hiscoreText;
+    [SerializeField] private Button retryButton;
+    [SerializeField] private TextMeshProUGUI coinCountText;
+    [SerializeField] private GameObject menu;
+    [SerializeField] private Animator animOpen;
+    [SerializeField] private int allCoins;
+    [SerializeField] private TextMeshProUGUI allCoinCountText;
+
+    public UnityEvent<int> OnCoinsUpdated = new UnityEvent<int>();
+    private int _coins;
 
     private Player player;
     private Spawner spawner;
-
-
     private float score;
     private float hiscore;
 
@@ -34,32 +43,28 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void OnDestroy()
-    {
-        if (Instance == this)
-        {
-            Instance = null;
-        }
-    }
-
     private void Start()
     {
         player = FindAnyObjectByType<Player>();
         spawner = FindAnyObjectByType<Spawner>();
 
+        OnCoinsUpdated.AddListener(UpdateCoinUI);
+        
         NewGame();
     }
 
     public void NewGame()
     {
         Obstacle[] obstacles = FindObjectsOfType<Obstacle>();
-
         foreach (var obstacle in obstacles)
         {
             Destroy(obstacle.gameObject);
         }
 
+        menu.SetActive(false);
+
         score = 0f;
+        _coins = 0;
         gameSpeed = initialGameSpeed;
         enabled = true;
 
@@ -69,7 +74,22 @@ public class GameManager : MonoBehaviour
         gameOverText.gameObject.SetActive(false);
         retryButton.gameObject.SetActive(false);
 
+        UpdateAllCoins();
         UpdateHiscore();
+        UpdateCoinUI(_coins);
+        scoreText.text = Mathf.RoundToInt(score).ToString("D5");
+    }
+
+    public void AddCoin()
+    {
+        _coins++;
+        OnCoinsUpdated.Invoke(_coins);
+
+    }
+
+    private void UpdateCoinUI(int coins)
+    {
+        coinCountText.text = coins.ToString("D5");
     }
 
     public void GameOver()
@@ -83,20 +103,23 @@ public class GameManager : MonoBehaviour
         gameOverText.gameObject.SetActive(true);
         retryButton.gameObject.SetActive(true);
 
+        UpdateAllCoins();
         UpdateHiscore();
+
+        menu.SetActive(true);
+        animOpen.SetTrigger("OpenMenu");
     }
 
     private void Update()
     {
         gameSpeed += gameSpeedIncrease * Time.deltaTime;
-
         score += gameSpeed * Time.deltaTime;
         scoreText.text = Mathf.RoundToInt(score).ToString("D5");
     }
 
     private void UpdateHiscore()
     {
-        float hiscore = PlayerPrefs.GetFloat("hiscore", 0);
+        hiscore = PlayerPrefs.GetFloat("hiscore", 0);
 
         if (score > hiscore)
         {
@@ -105,5 +128,15 @@ public class GameManager : MonoBehaviour
         }
 
         hiscoreText.text = Mathf.FloorToInt(hiscore).ToString("D5");
+    }
+
+    private void UpdateAllCoins()
+    {
+        allCoins = PlayerPrefs.GetInt("allCoins", 0);
+
+        allCoins += _coins;
+        PlayerPrefs.SetInt("allCoins", allCoins);
+
+        allCoinCountText.text = Mathf.FloorToInt(allCoins).ToString("D5");
     }
 }
