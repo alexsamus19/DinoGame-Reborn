@@ -17,7 +17,7 @@ public class GameManager : MonoBehaviour
 
     private Player player;
     private Spawner spawner;
-    private ObjectPool obstaclePool;
+
 
     private float score;
     private float hiscore;
